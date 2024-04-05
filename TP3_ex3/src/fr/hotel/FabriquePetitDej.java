@@ -1,46 +1,81 @@
 package fr.hotel;
-import java.io.IOException;
 
-import javax.servlet.ServletException;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
+import fr.hotel.PetitDejeuner;
 
 public class FabriquePetitDej {
+    private static final String CHAMP_CHAMBRE = "chambre";
+    private static final String CHAMP_HEURE = "heure";
+    private static final String CHAMP_NB_REPAS = "nombreDeRepas";
+    private static final String CHAMP_COMMENTAIRES = "commentaires";
 
-	    private static final String CHAMP_CHAMBRE = "chambre";
-	    private static final String CHAMP_HEURE = "heure";
-	    private static final String CHAMP_NB_REPAS = "nombreDeRepas";
-	    private static final String CHAMP_COMMENTAIRES = "commentaires";
+    Map<String, String> erreurs = new HashMap<>();
+    public boolean succesCreation = false;
+    
 
-	    public PetitDejeuner construitPetitDejeuner(HttpServletRequest request) {
-	      
-	        int chambre = Integer.parseInt(request.getParameter(CHAMP_CHAMBRE));
-	        int nombreDeRepas = Integer.parseInt(request.getParameter(CHAMP_NB_REPAS));
-	        String heure = request.getParameter(CHAMP_HEURE);
-	        String commentaires = request.getParameter(CHAMP_COMMENTAIRES);
+    public PetitDejeuner construitPetitDejeuner(HttpServletRequest request) {
+        int chambre = 0;
+        String heure = null;
+        int nombreDeRepas = 0;
+        String commentaire = null;
 
-	      
-	        return new PetitDejeuner(chambre, nombreDeRepas, heure, commentaires);
-	    }
-	
-	
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	    
-	    FabriquePetitDej fabrique = new FabriquePetitDej();
-	    PetitDejeuner petitDej = fabrique.construitPetitDejeuner(request);
-	  
-	    request.setAttribute("attributPetitDej", petitDej);
-	
-	    request.getRequestDispatcher("/WEB-INF/recapitulatif.jsp").forward(request, response);
-	}
-	private void validationChambre(int chambre) throws Exception {
-	    if (chambre < 100 || chambre > 200) {
-	        throw new Exception("Le numéro de chambre doit être compris entre 100 et 200.");
-	    }
-	}
-	
-	}
+        try {
+            chambre = Integer.parseInt(request.getParameter(CHAMP_CHAMBRE));
+            validationChambre(chambre);
+        } catch (NumberFormatException e) {
+            erreurs.put(CHAMP_CHAMBRE, "Le numéro de chambre doit être un entier.");
+        } catch (Exception e) {
+            erreurs.put(CHAMP_CHAMBRE, e.getMessage());
+        }
 
-	
-	    
+        heure = request.getParameter(CHAMP_HEURE);
+        try {
+            validationHeure(heure);
+        } catch (Exception e) {
+            erreurs.put(CHAMP_HEURE, e.getMessage());
+        }
 
+        try {
+            nombreDeRepas = Integer.parseInt(request.getParameter(CHAMP_NB_REPAS));
+        } catch (NumberFormatException e) {
+            erreurs.put(CHAMP_NB_REPAS, "Le nombre de repas doit être un entier.");
+        }
+
+        commentaire = request.getParameter(CHAMP_COMMENTAIRES);
+
+        if (erreurs.isEmpty()) {
+            succesCreation = true;
+        } else {
+            succesCreation = false;
+        }
+
+        return new PetitDejeuner(chambre, nombreDeRepas, heure, commentaire);
+    }
+
+    private void validationChambre(int chambre) throws Exception {
+        if (chambre < 100 || chambre > 200) {
+            throw new Exception("Le numéro de chambre doit être contenu entre 100 et 200");
+        }
+    }
+    private void validationHeure(String heure) throws Exception {
+        if (heure == null) {
+            throw new Exception("L'heure doit être valide.");
+        }
+
+        int heures = Integer.parseInt(heure.split(":")[0]);
+
+       
+        if (heures < 6 || heures > 10) {
+            throw new Exception("La livraison en chambre de livraison ne peut être choisie qu' entre 6h et 10h");
+        }
+    }
+
+    public Map<String, String> getErreurs() {
+        return erreurs;
+    }
+}
